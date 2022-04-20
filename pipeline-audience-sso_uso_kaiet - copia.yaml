@@ -35,16 +35,21 @@ Parameters:
 
   '''
   
+  '''
+  Creamos un repositorio en github donde hostear el código y además le ponemos la rama principal que es
+  la de "producciñon" de donde leera el código
+  
+  '''
   GitHubRepoName:
     Description: The repo we're building from
     Type: String
-    Default: ddna-audience-sso
+    Default: AWS-CF-S3-LAMBDA
   GitHubBranch:
     Description: The branch we're building from
     Type: String
-    Default: dev
+    Default: main
 
-
+'''
 Mappings:
   EnvironmentsAndRoles:
     dev:
@@ -57,6 +62,7 @@ Mappings:
       PipelineRole: arn:aws:iam::789398071196:role/DevopsAccCodePipelineCloudFormationRole
       CfnDeploy: arn:aws:iam::789398071196:role/DevopsAcctCldfrmtnDeployerRole
 
+'''
 
 Resources:
   AppPipelineWebhook:
@@ -223,10 +229,10 @@ Resources:
                 Provider: GitHub
                 Version: 1
               Configuration:
-                Owner: OlympicChannelTechOps
+                Owner: KAIET98
                 Repo: !Ref GitHubRepoName
                 Branch: !Ref GitHubBranch
-                OAuthToken: "{{resolve:secretsmanager:devops/github:SecretString:Token}}"
+                OAuthToken: "{{resolve:secretsmanager:CICD:SecretString:GitHubPersonalAccesToken}}"
                 PollForSourceChanges: false
               OutputArtifacts:
                 - Name: TemplateSource
