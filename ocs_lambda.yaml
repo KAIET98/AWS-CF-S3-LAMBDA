@@ -7,7 +7,7 @@
 #  limitations under the License.
 
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Deployment for OCS Audience SSO (Single Sign ON)
+
 Parameters:
   Environment:
     Type: String
@@ -27,14 +27,6 @@ Parameters:
     Type: String
    # Default: core-deployment-bucket-key-roles-artifactbucket-k91z60qmptt8
 
-  ''' 
-  CMKARN:
-    Description: ARN of the KMS CMK creates in Devops account
-    Type: String
-    Default: arn:aws:kms:eu-west-1:112555760202:key/759c4789-8077-4fef-9681-e0ff306b96cc
-
-  '''
-  
   '''
   Creamos un repositorio en github donde hostear el código y además le ponemos la rama principal que es
   la de "producciñon" de donde leera el código
@@ -49,20 +41,6 @@ Parameters:
     Type: String
     Default: main
 
-'''
-Mappings:
-  EnvironmentsAndRoles:
-    dev:
-      PipelineRole: arn:aws:iam::328502120762:role/DevopsAccCodePipelineCloudFormationRole
-      CfnDeploy: arn:aws:iam::328502120762:role/DevopsAcctCldfrmtnDeployerRole
-    stage:
-      PipelineRole: arn:aws:iam::879022424377:role/DevopsAccCodePipelineCloudFormationRole
-      CfnDeploy: arn:aws:iam::879022424377:role/DevopsAcctCldfrmtnDeployerRole
-    prod:
-      PipelineRole: arn:aws:iam::789398071196:role/DevopsAccCodePipelineCloudFormationRole
-      CfnDeploy: arn:aws:iam::789398071196:role/DevopsAcctCldfrmtnDeployerRole
-
-'''
 
 Resources:
   AppPipelineWebhook:
@@ -80,137 +58,11 @@ Resources:
       Name: !Sub ${AWS::StackName}
       TargetPipelineVersion: !GetAtt Pipeline.Version
       RegisterWithThirdParty: true
-  '''
-  EcrSFSCExporterRepository:
-    Type: AWS::ECR::Repository
-    DeletionPolicy: Retain
-    Properties:
-      RepositoryName: !Sub "audience-sso-sfsc-exporter-${Environment}"
-      RepositoryPolicyText:
-        Version: "2012-10-17"
-        Statement:
-          - Sid: AllowPushPull
-            Effect: Allow
-            Principal:
-              AWS:
-                - arn:aws:iam::328502120762:root
-                - arn:aws:iam::789398071196:root
-                - arn:aws:iam::879022424377:root
-                - arn:aws:iam::112555760202:root
-            Action:
-              - "ecr:GetDownloadUrlForLayer"
-              - "ecr:BatchGetImage"
-              - "ecr:BatchCheckLayerAvailability"
-
-  EcrSFMCSFTPImporterRepository:
-    Type: AWS::ECR::Repository
-    DeletionPolicy: Retain
-    Properties:
-      RepositoryName: !Sub "audience-sso-sfmc-sftp-importer-${Environment}"
-      RepositoryPolicyText:
-        Version: "2012-10-17"
-        Statement:
-          - Sid: AllowPushPull
-            Effect: Allow
-            Principal:
-              AWS:
-                - arn:aws:iam::328502120762:root
-                - arn:aws:iam::789398071196:root
-                - arn:aws:iam::879022424377:root
-                - arn:aws:iam::112555760202:root
-            Action:
-              - "ecr:GetDownloadUrlForLayer"
-              - "ecr:BatchGetImage"
-              - "ecr:BatchCheckLayerAvailability"
-
-  EcrSCVDeleterRepository:
-    Type: AWS::ECR::Repository
-    DeletionPolicy: Retain
-    Properties:
-      RepositoryName: !Sub "audience-sso-scv-deleter-${Environment}"
-      RepositoryPolicyText:
-        Version: "2012-10-17"
-        Statement:
-          - Sid: AllowPushPull
-            Effect: Allow
-            Principal:
-              AWS:
-                - arn:aws:iam::328502120762:root
-                - arn:aws:iam::789398071196:root
-                - arn:aws:iam::879022424377:root
-                - arn:aws:iam::112555760202:root
-            Action:
-              - "ecr:GetDownloadUrlForLayer"
-              - "ecr:BatchGetImage"
-              - "ecr:BatchCheckLayerAvailability"
-
-  EcrSCVLegacySubscriptionsUpdaterRepository:
-    Type: AWS::ECR::Repository
-    DeletionPolicy: Retain
-    Properties:
-      RepositoryName: !Sub "audience-sso-scv-legacy-subscriptions-updater-${Environment}"
-      RepositoryPolicyText:
-        Version: "2012-10-17"
-        Statement:
-          - Sid: AllowPushPull
-            Effect: Allow
-            Principal:
-              AWS:
-                - arn:aws:iam::328502120762:root
-                - arn:aws:iam::789398071196:root
-                - arn:aws:iam::879022424377:root
-                - arn:aws:iam::112555760202:root
-            Action:
-              - "ecr:GetDownloadUrlForLayer"
-              - "ecr:BatchGetImage"
-              - "ecr:BatchCheckLayerAvailability"
-
-  EcrSCVSharedToRedshiftMtrViewsRefresherRepository:
-    Type: AWS::ECR::Repository
-    DeletionPolicy: Retain
-    Properties:
-      RepositoryName: !Sub "audience-sso-scv-redshiftrefresher-${Environment}"
-      RepositoryPolicyText:
-        Version: "2012-10-17"
-        Statement:
-          - Sid: AllowPushPull
-            Effect: Allow
-            Principal:
-              AWS:
-                - arn:aws:iam::328502120762:root
-                - arn:aws:iam::789398071196:root
-                - arn:aws:iam::879022424377:root
-                - arn:aws:iam::112555760202:root
-            Action:
-              - "ecr:GetDownloadUrlForLayer"
-              - "ecr:BatchGetImage"
-              - "ecr:BatchCheckLayerAvailability"
-
-  EcrSCVSharedToSFMCMtrViewsRefresherRepository:
-    Type: AWS::ECR::Repository
-    DeletionPolicy: Retain
-    Properties:
-      RepositoryName: !Sub "audience-sso-scv-sfmcrefresher-${Environment}"
-      RepositoryPolicyText:
-        Version: "2012-10-17"
-        Statement:
-          - Sid: AllowPushPull
-            Effect: Allow
-            Principal:
-              AWS:
-                - arn:aws:iam::328502120762:root
-                - arn:aws:iam::789398071196:root
-                - arn:aws:iam::879022424377:root
-                - arn:aws:iam::112555760202:root
-            Action:
-              - "ecr:GetDownloadUrlForLayer"
-              - "ecr:BatchGetImage"
-              - "ecr:BatchCheckLayerAvailability"
-  '''
+  
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
-      RoleArn: arn:aws:iam::112555760202:role/shared-CodePipelineRole
+      RoleArn: arn:aws:iam::070307590085:role/shared-CodePipelineRole
       Name: !Ref AWS::StackName
       ArtifactStore:
        Type: S3
@@ -305,7 +157,7 @@ Resources:
       '''
       EncryptionKey: !Ref CMKARN
       '''
-      ServiceRole: arn:aws:iam::112555760202:role/shared-CodeBuildRole
+      ServiceRole: arn:aws:iam::070307590085:role/shared-CodeBuildRole
       Artifacts:
         Type: CODEPIPELINE
       Environment:
@@ -314,13 +166,7 @@ Resources:
         Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
         PrivilegedMode: True
         EnvironmentVariables:
-        '''
-          - Name: DOCKERHUB_TOKEN
-            Value: "/MGMT/dockerhub/access_token"
-            Type: PARAMETER_STORE
-          - Name: DOCKERHUB_USER
-            Value: "ocsdatamanagement"
-        '''
+
           - Name: S3Bucket
             Value: !Ref S3Bucket
           - Name: S3BucketUsEast2
@@ -337,51 +183,7 @@ Resources:
             Value: !Ref AWS::AccountId
           - Name: AWS_REGION
             Value: !Ref AWS::Region
-
-          '''
-          - Name: CODEARTIFACT_DOMAIN
-            Value: ocsddna
-          - Name: CODEARTIFACT_REPO
-            Value: ddna-mgmt
-          '''
-          - Name: SFSC_EXPORTER_REPOSITORY_URI
-            Value: !Join
-              - ""
-              - - !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/"
-                - !Ref EcrSFSCExporterRepository
-          - Name: SFMC_SFTP_IMPORTER_REPOSITORY_URI
-            Value: !Join
-              - ""
-              - - !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/"
-                - !Ref EcrSFMCSFTPImporterRepository
-          - Name: SCV_DELETER_REPOSITORY_URI
-            Value: !Join
-              - ""
-              - - !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/"
-                - !Ref EcrSCVDeleterRepository
-
-          '''
-          - Name: SCV_LEGACY_SUBSCRIPTIONS_UPDATER_REPOSITORY_URI
-            Value: !Join
-              - ""
-              - - !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/"
-                - !Ref EcrSCVLegacySubscriptionsUpdaterRepository
-
-          '''
-
-          '''
-          - Name: SCV_SHARED_TO_REDSHIFT_MTR_VIEWS_REFRESHER_REPOSITORY_URI
-            Value: !Join
-              - ""
-              - - !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/"
-                - !Ref EcrSCVSharedToRedshiftMtrViewsRefresherRepository
-          - Name: SCV_SHARED_TO_SFMC_MTR_VIEWS_REFRESHER_REPOSITORY_URI
-            Value: !Join
-              - ""
-              - - !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/"
-                - !Ref EcrSCVSharedToSFMCMtrViewsRefresherRepository
-
-          '''
+          
       Source:
         Type: CODEPIPELINE
         BuildSpec: |
