@@ -19,11 +19,11 @@ Parameters:
 
     '''
   ProjectName:
-    Description: OCS_PRUEBA
+    Description: ocs-prueba
     Type: String
    # Default: audience-sso-dev
   S3Bucket:
-    Description: OCS_bucket_prueba
+    Description: ocs-bucket-prueba
     Type: String
    # Default: core-deployment-bucket-key-roles-artifactbucket-k91z60qmptt8
 
