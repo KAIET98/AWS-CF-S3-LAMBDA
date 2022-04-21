@@ -80,7 +80,7 @@ Resources:
       Name: !Sub ${AWS::StackName}
       TargetPipelineVersion: !GetAtt Pipeline.Version
       RegisterWithThirdParty: true
-
+  '''
   EcrSFSCExporterRepository:
     Type: AWS::ECR::Repository
     DeletionPolicy: Retain
@@ -206,7 +206,7 @@ Resources:
               - "ecr:GetDownloadUrlForLayer"
               - "ecr:BatchGetImage"
               - "ecr:BatchCheckLayerAvailability"
-
+  '''
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
@@ -215,9 +215,13 @@ Resources:
       ArtifactStore:
        Type: S3
        Location: !Ref S3Bucket
+
+       '''
        EncryptionKey:
          Id: !Ref CMKARN
          Type: KMS
+
+        '''
 
       Stages:
         - Name: Source
@@ -298,7 +302,9 @@ Resources:
     Properties:
       Name: !Ref ProjectName
       Description: !Ref ProjectName
+      '''
       EncryptionKey: !Ref CMKARN
+      '''
       ServiceRole: arn:aws:iam::112555760202:role/shared-CodeBuildRole
       Artifacts:
         Type: CODEPIPELINE
@@ -319,18 +325,25 @@ Resources:
             Value: !Ref S3Bucket
           - Name: S3BucketUsEast2
             Value: core-deployment-us-east-2-bucket-artifactbucket-ka5w8dm7s2s2
+
+          '''  
           - Name: KMSKey
             Value: !Ref CMKARN
+
+          '''
           - Name: STACKNAME
             Value: !Ref ProjectName
           - Name: AWS_ACCOUNT_ID
             Value: !Ref AWS::AccountId
           - Name: AWS_REGION
             Value: !Ref AWS::Region
+
+          '''
           - Name: CODEARTIFACT_DOMAIN
             Value: ocsddna
           - Name: CODEARTIFACT_REPO
             Value: ddna-mgmt
+          '''
           - Name: SFSC_EXPORTER_REPOSITORY_URI
             Value: !Join
               - ""
