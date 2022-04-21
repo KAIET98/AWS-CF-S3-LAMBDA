@@ -19,11 +19,11 @@ Parameters:
 
     '''
   ProjectName:
-    Description: Mi primer proyecto
+    Description: OCS_PRUEBA
     Type: String
    # Default: audience-sso-dev
   S3Bucket:
-    Description: bucket_prueba
+    Description: OCS_bucket_prueba
     Type: String
    # Default: core-deployment-bucket-key-roles-artifactbucket-k91z60qmptt8
 
@@ -308,11 +308,13 @@ Resources:
         Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
         PrivilegedMode: True
         EnvironmentVariables:
+        '''
           - Name: DOCKERHUB_TOKEN
             Value: "/MGMT/dockerhub/access_token"
             Type: PARAMETER_STORE
           - Name: DOCKERHUB_USER
             Value: "ocsdatamanagement"
+        '''
           - Name: S3Bucket
             Value: !Ref S3Bucket
           - Name: S3BucketUsEast2
@@ -344,11 +346,17 @@ Resources:
               - ""
               - - !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/"
                 - !Ref EcrSCVDeleterRepository
+
+          '''
           - Name: SCV_LEGACY_SUBSCRIPTIONS_UPDATER_REPOSITORY_URI
             Value: !Join
               - ""
               - - !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/"
                 - !Ref EcrSCVLegacySubscriptionsUpdaterRepository
+
+          '''
+
+          '''
           - Name: SCV_SHARED_TO_REDSHIFT_MTR_VIEWS_REFRESHER_REPOSITORY_URI
             Value: !Join
               - ""
@@ -359,6 +367,8 @@ Resources:
               - ""
               - - !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/"
                 - !Ref EcrSCVSharedToSFMCMtrViewsRefresherRepository
+
+          '''
       Source:
         Type: CODEPIPELINE
         BuildSpec: |
@@ -367,97 +377,13 @@ Resources:
             install:
               runtime-versions:
                 python: latest
-              commands:
-                - ls -R
+              
             pre_build:
-              commands:
-                - echo "Updating AWSCLI and login into Codeartifact"
-                - pip3 install awscli --upgrade --user
-                - aws codeartifact login --tool pip --repository ddna-mgmt --domain ocsddna --domain-owner ${AWS_ACCOUNT_ID}
-                - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-                - IMAGE_TAG=${COMMIT_HASH:=latest}
-                - echo "Logging in to Dockerhub ..."
-                - echo $DOCKERHUB_TOKEN | docker login --username $DOCKERHUB_USER --password-stdin
-                - $(aws ecr get-login --no-include-email)
+              
             build:
-              commands:
-                - echo "Build started on `date`"
-                - echo "Building the Docker image (SFSCExporter)..."
-                - pip install -r functions/sfsc_exporter/requirements.txt -t functions/sfsc_exporter/
-                - pip install libs/audiencesso -t functions/sfsc_exporter/
-                - docker build -t $SFSC_EXPORTER_REPOSITORY_URI:latest functions/sfsc_exporter/
-                - docker tag $SFSC_EXPORTER_REPOSITORY_URI:latest $SFSC_EXPORTER_REPOSITORY_URI:$IMAGE_TAG
-
-                - echo "Building the Docker image (SFMCSFTPImporter)..."
-                - pip install -r functions/sfmc_sftp_importer/requirements.txt -t functions/sfmc_sftp_importer/
-                - pip install libs/audiencesso -t functions/sfmc_sftp_importer/
-                - docker build -t $SFMC_SFTP_IMPORTER_REPOSITORY_URI:latest functions/sfmc_sftp_importer/
-                - docker tag $SFMC_SFTP_IMPORTER_REPOSITORY_URI:latest $SFMC_SFTP_IMPORTER_REPOSITORY_URI:$IMAGE_TAG
-
-                - echo "Building the Docker image (SCVDeleter)..."
-                - pip install -r functions/scv_deleter/requirements.txt -t functions/scv_deleter/
-                - pip install libs/audiencesso -t functions/scv_deleter/
-                - docker build -t $SCV_DELETER_REPOSITORY_URI:latest functions/scv_deleter/
-                - docker tag $SCV_DELETER_REPOSITORY_URI:latest $SCV_DELETER_REPOSITORY_URI:$IMAGE_TAG
-
-                - echo "Building the Docker image (SCVLegacySubscriptionsUpdater)..."
-                - pip install -r functions/scv_legacy_subscriptions_updater/requirements.txt -t functions/scv_legacy_subscriptions_updater/
-                - pip install libs/audiencesso -t functions/scv_legacy_subscriptions_updater/
-                - docker build -t $SCV_LEGACY_SUBSCRIPTIONS_UPDATER_REPOSITORY_URI:latest functions/scv_legacy_subscriptions_updater/
-                - docker tag $SCV_LEGACY_SUBSCRIPTIONS_UPDATER_REPOSITORY_URI:latest $SCV_LEGACY_SUBSCRIPTIONS_UPDATER_REPOSITORY_URI:$IMAGE_TAG
-
-                - echo "Building the Docker image (SCVSharedToRedshiftMtrViewsRefresher)..."
-                - pip install -r functions/scv_shared_to_redshift_mtr_views_refresher/requirements.txt -t functions/scv_shared_to_redshift_mtr_views_refresher/
-                - pip install libs/audiencesso -t functions/scv_shared_to_redshift_mtr_views_refresher/
-                - docker build -t $SCV_SHARED_TO_REDSHIFT_MTR_VIEWS_REFRESHER_REPOSITORY_URI:latest functions/scv_shared_to_redshift_mtr_views_refresher/
-                - docker tag $SCV_SHARED_TO_REDSHIFT_MTR_VIEWS_REFRESHER_REPOSITORY_URI:latest $SCV_SHARED_TO_REDSHIFT_MTR_VIEWS_REFRESHER_REPOSITORY_URI:$IMAGE_TAG
-
-                - echo "Building the Docker image (SCVSharedToSFMCMtrViewsRefresher)..."
-                - pip install -r functions/scv_shared_to_sfmc_mtr_views_refresher/requirements.txt -t functions/scv_shared_to_sfmc_mtr_views_refresher/
-                - pip install libs/audiencesso -t functions/scv_shared_to_sfmc_mtr_views_refresher/
-                - docker build -t $SCV_SHARED_TO_SFMC_MTR_VIEWS_REFRESHER_REPOSITORY_URI:latest functions/scv_shared_to_sfmc_mtr_views_refresher/
-                - docker tag $SCV_SHARED_TO_SFMC_MTR_VIEWS_REFRESHER_REPOSITORY_URI:latest $SCV_SHARED_TO_SFMC_MTR_VIEWS_REFRESHER_REPOSITORY_URI:$IMAGE_TAG
-
-                - echo "Building lambda functions..."
-                - pip install -r functions/sanitiser/requirements.txt -t functions/sanitiser/
-                - pip install libs/audiencesso -t functions/sanitiser/
-                - pip install -r functions/scv_importer/requirements.txt -t functions/scv_importer/
-                - pip install libs/audiencesso -t functions/scv_importer/
-                - pip install -r functions/scv_ip_importer/requirements.txt -t functions/scv_ip_importer/
-                - pip install libs/audiencesso -t functions/scv_ip_importer/
-                - pip install -r functions/scv_ip_deduplicator/requirements.txt -t functions/scv_ip_deduplicator/
-                - pip install libs/audiencesso -t functions/scv_ip_deduplicator/
-                - pip install -r functions/api/requirements.txt -t functions/api/
-                - pip install libs/audiencesso -t functions/api/
-                - pip install -r functions/api_auth/requirements.txt -t functions/api_auth/
-                - pip install libs/audiencesso -t functions/api_auth/
-                - pip install -r functions/replay/requirements.txt -t functions/replay/
-                - pip install -r functions/fdna_to_scv_importer/requirements.txt -t functions/fdna_to_scv_importer/
-                - pip install libs/audiencesso -t functions/fdna_to_scv_importer/
+              
             post_build:
               commands:
-                - echo "Build completed on `date`"
-                - echo "Pushing the Docker images..."
-
-                - docker push $SFSC_EXPORTER_REPOSITORY_URI:latest
-                - docker push $SFSC_EXPORTER_REPOSITORY_URI:$IMAGE_TAG
-
-                - docker push $SFMC_SFTP_IMPORTER_REPOSITORY_URI:latest
-                - docker push $SFMC_SFTP_IMPORTER_REPOSITORY_URI:$IMAGE_TAG
-
-                - docker push $SCV_DELETER_REPOSITORY_URI:latest
-                - docker push $SCV_DELETER_REPOSITORY_URI:$IMAGE_TAG
-
-                - docker push $SCV_LEGACY_SUBSCRIPTIONS_UPDATER_REPOSITORY_URI:latest
-                - docker push $SCV_LEGACY_SUBSCRIPTIONS_UPDATER_REPOSITORY_URI:$IMAGE_TAG
-
-                - docker push $SCV_SHARED_TO_REDSHIFT_MTR_VIEWS_REFRESHER_REPOSITORY_URI:latest
-                - docker push $SCV_SHARED_TO_REDSHIFT_MTR_VIEWS_REFRESHER_REPOSITORY_URI:$IMAGE_TAG
-
-                - docker push $SCV_SHARED_TO_SFMC_MTR_VIEWS_REFRESHER_REPOSITORY_URI:latest
-                - docker push $SCV_SHARED_TO_SFMC_MTR_VIEWS_REFRESHER_REPOSITORY_URI:$IMAGE_TAG
-
-                - echo "Packaging Cloudformation template"
                 - aws cloudformation package --template-file template.yaml --s3-bucket $S3Bucket --s3-prefix ${STACKNAME}/codebuild --output-template-file package.yaml
           artifacts:
             files:
