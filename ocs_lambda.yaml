@@ -11,27 +11,27 @@ AWSTemplateFormatVersion: "2010-09-09"
 Parameters:
   Environment:
     Type: String
-    '''  
+    
     AllowedValues:
       - dev
-      - stage
-      - prod
+    #  - stage
+    #  - prod
 
-    '''
+  
   ProjectName:
     Description: ocs-prueba
     Type: String
-   # Default: audience-sso-dev
+    Default: ocs-lambda-kaiet
   S3Bucket:
     Description: ocs-bucket-prueba
     Type: String
-   # Default: core-deployment-bucket-key-roles-artifactbucket-k91z60qmptt8
+    Default: ocs-kaiet
 
-  '''
-  Creamos un repositorio en github donde hostear el código y además le ponemos la rama principal que es
-  la de "producciñon" de donde leera el código
   
-  '''
+  #Creamos un repositorio en github donde hostear el código y además le ponemos la rama principal que es
+  #la de "producciñon" de donde leera el código
+  
+  
   GitHubRepoName:
     Description: The repo we're building from
     Type: String
@@ -40,6 +40,12 @@ Parameters:
     Description: The branch we're building from
     Type: String
     Default: main
+  
+Mappings:
+  EnvironmentsAndRoles:
+    dev:
+      PipelineRole: arn:aws:iam::070307590085:role/AWSCodePipelineFullAccess
+      CfnDeploy: arn:aws:iam::070307590085:role/AWSCodePipelineFullAccess
 
 
 Resources:
@@ -68,12 +74,7 @@ Resources:
        Type: S3
        Location: !Ref S3Bucket
 
-       '''
-       EncryptionKey:
-         Id: !Ref CMKARN
-         Type: KMS
-
-        '''
+   
 
       Stages:
         - Name: Source
@@ -154,10 +155,8 @@ Resources:
     Properties:
       Name: !Ref ProjectName
       Description: !Ref ProjectName
-      '''
-      EncryptionKey: !Ref CMKARN
-      '''
-      ServiceRole: arn:aws:iam::070307590085:role/shared-CodeBuildRole
+
+      ServiceRole: arn:aws:iam::070307590085:role/AWSCodeBuildAdminAccess
       Artifacts:
         Type: CODEPIPELINE
       Environment:
@@ -172,11 +171,7 @@ Resources:
           - Name: S3BucketUsEast2
             Value: core-deployment-us-east-2-bucket-artifactbucket-ka5w8dm7s2s2
 
-          '''  
-          - Name: KMSKey
-            Value: !Ref CMKARN
-
-          '''
+         
           - Name: STACKNAME
             Value: !Ref ProjectName
           - Name: AWS_ACCOUNT_ID
