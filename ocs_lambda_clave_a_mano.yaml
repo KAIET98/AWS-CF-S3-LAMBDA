@@ -1,0 +1,258 @@
+#  Copyright 2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#  Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance with
+#  the License. A copy of the License is located at
+#      http://aws.amazon.com/apache2.0/
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+#  CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and
+#  limitations under the License.
+
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Environment:
+    Type: String
+    
+    AllowedValues:
+      - dev
+    #  - stage
+    #  - prod
+
+  
+  ProjectName:
+    Description: ocs-prueba
+    Type: String
+    Default: ocs-lambda-kaiet
+  S3Bucket:
+    Description: ocs-bucket-prueba
+    Type: String
+    Default: ocs-kaiet
+  GitHubOwner:
+    Type: String
+    Default: KAIET98 
+
+  GitHubOAuthToken:
+    Type: String
+    NoEcho: true
+    MinLength: 40
+    MaxLength: 40
+    #AllowedPattern: '[a-z0-9]*' 
+
+  
+  #Creamos un repositorio en github donde hostear el código y además le ponemos la rama principal que es
+  #la de "producciñon" de donde leera el código
+  
+  
+  GitHubRepoName:
+    Description: The repo we're building from
+    Type: String
+    Default: AWS-CF-S3-LAMBDA
+  GitHubBranch:
+    Description: The branch we're building from
+    Type: String
+    Default: main
+  
+Mappings:
+  EnvironmentsAndRoles:
+    dev:
+      PipelineRole: arn:aws:iam::070307590085:role/AWSCodePipelineFullAccess
+      CfnDeploy: arn:aws:iam::070307590085:role/AWSCodePipelineFullAccess
+
+
+Resources:
+
+
+  #AppPipelineWebhook:
+  #  Type: 'AWS::CodePipeline::Webhook'
+  #  Properties:
+  #    Authentication: GITHUB_HMAC
+  #    AuthenticationConfiguration:
+  #      SecretToken: '{{resolve:secretsmanager:GITHUB_AWS:SecretString:token}}'
+  #    Filters:
+  #      - JsonPath: "$.ref"
+  #        MatchEquals: !Sub "refs/heads/${GitHubBranch}"
+  #    TargetPipeline: !Ref Pipeline
+  #    TargetAction: SourceAction
+  #    Name: !Sub ${AWS::StackName}
+  #    TargetPipelineVersion: !GetAtt Pipeline.Version
+  #    RegisterWithThirdParty: true
+  
+  Pipeline:
+    Type: 'AWS::CodePipeline::Pipeline'
+    Properties:
+      Name: github-events-pipeline
+      RoleArn: !GetAtt 
+        - CodePipelineServiceRole
+        - Arn
+      #RoleArn: arn:aws:iam::070307590085:role/AWSCodePipelineFullAccess
+      #Name: !Sub ${AWS::StackName}
+      #Name: COSITAS
+     # Name: !Ref AWS::StackName
+      ArtifactStore:
+       Type: S3
+       Location: !Ref S3Bucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: SourceAction 
+            #- Name: GetSource
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: 1
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                #Owner: ${self:custom.sourceRepoOwner}
+
+                Owner: !Ref GitHubOwner
+                
+                Repo: !Ref GitHubRepoName
+                Branch: !Ref GitHubBranch
+                #OAuthToken: "{{resolve:secretsmanager:CICD:SecretString:GITHUB_AWS}}"
+                #OAuthToken: "{{resolve:secretsmanager:GITHUB_AWS:SecretString:token}}"
+                OAuthToken: !Ref GitHubOAuthToken
+                PollForSourceChanges: false
+              OutputArtifacts:
+                - Name: TemplateSource
+             
+              RunOrder: 1
+
+        - Name: Build-Source
+          Actions:
+            - Name: BuildSource
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              InputArtifacts:
+                - Name: TemplateSource
+              OutputArtifacts:
+                - Name: BuildOutput
+              Configuration:
+                ProjectName: !Ref BuildStuff
+                PrimarySource: TemplateSource
+              RunOrder: 1
+
+  CodePipelineServiceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: AWS-CodePipeline-Service-3
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'codecommit:CancelUploadArchive'
+                  - 'codecommit:GetBranch'
+                  - 'codecommit:GetCommit'
+                  - 'codecommit:GetUploadArchiveStatus'
+                  - 'codecommit:UploadArchive'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'codedeploy:CreateDeployment'
+                  - 'codedeploy:GetApplicationRevision'
+                  - 'codedeploy:GetDeployment'
+                  - 'codedeploy:GetDeploymentConfig'
+                  - 'codedeploy:RegisterApplicationRevision'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'codebuild:BatchGetBuilds'
+                  - 'codebuild:StartBuild'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'devicefarm:ListProjects'
+                  - 'devicefarm:ListDevicePools'
+                  - 'devicefarm:GetRun'
+                  - 'devicefarm:GetUpload'
+                  - 'devicefarm:CreateUpload'
+                  - 'devicefarm:ScheduleRun'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'lambda:InvokeFunction'
+                  - 'lambda:ListFunctions'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'iam:PassRole'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'elasticbeanstalk:*'
+                  - 'ec2:*'
+                  - 'elasticloadbalancing:*'
+                  - 'autoscaling:*'
+                  - 'cloudwatch:*'
+                  - 's3:*'
+                  - 'sns:*'
+                  - 'cloudformation:*'
+                  - 'rds:*'
+                  - 'sqs:*'
+                  - 'ecs:*'
+                Resource: '*'
+        
+
+  BuildStuff:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Ref ProjectName
+      Description: !Ref ProjectName 
+
+      ServiceRole: arn:aws:iam::070307590085:role/AWSCodeBuildAdminAccess
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: linuxContainer
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
+        PrivilegedMode: True
+        EnvironmentVariables:
+
+          - Name: S3Bucket
+            Value: !Ref S3Bucket
+          - Name: S3BucketUsEast2
+            Value: core-deployment-us-east-2-bucket-artifactbucket-ka5w8dm7s2s2
+
+         
+          - Name: STACKNAME
+            Value: !Ref ProjectName
+          - Name: AWS_ACCOUNT_ID
+            Value: !Ref AWS::AccountId
+          - Name: AWS_REGION
+            Value: !Ref AWS::Region
+          
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                python: latest
+              
+            pre_build:
+              
+            build:
+              
+            post_build:
+              commands:
+                - aws cloudformation package --template-file template.yaml --s3-bucket $S3Bucket --s3-prefix ${STACKNAME}/codebuild --output-template-file package.yaml
+          artifacts:
+            files:
+             - package.yaml
+            discard-paths: yes
