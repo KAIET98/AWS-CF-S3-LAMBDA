@@ -54,7 +54,7 @@ Resources:
     Properties:
       Authentication: GITHUB_HMAC
       AuthenticationConfiguration:
-        SecretToken: "{{resolve:secretsmanager:CICD:SecretString:GitHubPersonalAccesToken}}"
+        SecretToken: "{{resolve:secretsmanager:GitHubPersonalAccesToken:SecretString:token}}"
       Filters:
         -
           JsonPath: "$.ref"
@@ -89,7 +89,7 @@ Resources:
                 Owner: KAIET98
                 Repo: !Ref GitHubRepoName
                 Branch: !Ref GitHubBranch
-                OAuthToken: "{{resolve:secretsmanager:CICD:SecretString:GitHubPersonalAccesToken}}"
+                OAuthToken: "{{resolve:secretsmanager:GitHubPersonalAccesToken:SecretString:token}}"
                 PollForSourceChanges: false
               OutputArtifacts:
                 - Name: TemplateSource
