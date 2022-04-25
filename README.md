@@ -9,3 +9,5 @@ En el yalm, existe un apartado donde se habla de un Bucket de S3 (S3Bucket), par
 A fecha de 25/04, la parte de hay que desetiquetarla, y hay que meter la clave a mano; pero funciona. 
 
 Existe un readme llamado, script-rest.md, estan los demás pasos del pipeline que aun no se han comprobado si funcionan o como funcionan.
+
+El YALM que hay que subir en este caso es el 'ocs_lambda_clave_a_mano.yalm".
