@@ -54,7 +54,7 @@ Resources:
     Properties:
       Authentication: GITHUB_HMAC
       AuthenticationConfiguration:
-        SecretToken: "{{resolve:secretsmanager:devops/github:SecretString:WebhookSecret}}"
+        SecretToken: "{{resolve:secretsmanager:CICD:SecretString:GitHubPersonalAccesToken}}"
       Filters:
         -
           JsonPath: "$.ref"
